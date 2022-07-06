@@ -15,6 +15,7 @@ import util.Configuration;
 import util.EndPoints;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static io.restassured.RestAssured.given;
 
@@ -33,14 +34,20 @@ public class CreateProductsSteps {
 
     public String productName;
     public String productId;
+    public int productPrice;
+    public int productItemCount;
 
-    @Given("^request body with valid ([^\"]*)$")
+    @Given("^request body with valid ([^\"]*) \"(\\\\d+)\" \"(\\\\d+)\" $")
 
 
-    public void requestBodyWithValidName(String product)throws IOException {
+    public void requestBodyWithValidName(String product, int price, int itemCount)throws IOException {
         productName=product;
+        productPrice = price;
+        productItemCount = productItemCount;
         documentContext = common.updateJson("//src//test//resources//Templates//createProduct.json");
         documentContext.set("$.name", productName);
+        documentContext.set("$.price", productPrice);
+        documentContext.set("$.itemCount", productItemCount);
     }
 
     @When("I do post call to create the product")
@@ -64,6 +71,10 @@ public class CreateProductsSteps {
         resp = given().spec(requestSpec).get(endPoints.baseUrl+endPoints.get_product+"/"+productId);
         resp.then().statusCode(200).log().all();
         Assert.assertEquals(resp.body().jsonPath().get("name"),productName);
+        Assert.assertEquals(Optional.ofNullable(resp.body().jsonPath().get("price")),productPrice);
+        Assert.assertEquals(Optional.ofNullable(resp.body().jsonPath().get("itemCount")),productItemCount);
+        Assert.assertNotNull(resp.body().jsonPath().get("created"));
+        Assert.assertNotNull(resp.body().jsonPath().get("modified"));
 
     }
 
